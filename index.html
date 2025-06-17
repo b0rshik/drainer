@@ -79,6 +79,25 @@
             animation: fly-in 0.5s ease-out forwards;
         }
 
+        .balance-display {
+            background: linear-gradient(to right, #272727, #404040);
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.3em;
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .balance-display .toncoin-icon {
+            width: 24px;
+            height: 24px;
+        }
+
         .case-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -193,7 +212,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 1001; /* Higher z-index than main overlay */
+            z-index: 1001;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -333,17 +352,17 @@
             transform: none;
         }
 
-        .verification-message { /* New class for verification message */
+        .error-message {
             text-align: center;
             color: #ff3838;
             font-size: 1.1em;
-            margin-bottom: 15px; /* Added margin for spacing */
+            margin-top: 15px;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
-        .verification-message.active {
+        .error-message.active {
             opacity: 1;
             visibility: visible;
         }
@@ -355,7 +374,6 @@
             text-align: center;
             padding-bottom: 20px;
         }
-
     </style>
 </head>
 <body>
@@ -379,8 +397,9 @@
             </div>
             <div class="line"></div>
         </div>
-        <div class="verification-message" id="verificationMessage">Пройдите проверку на бота, чтобы открыть кейс.</div>
-        <button id="spinButton" disabled>открыть</button> </div>
+        <button id="spinButton">открыть</button>
+        <div class="error-message" id="errorMessage"></div>
+    </div>
 
     <div class="won-item-overlay" id="wonItemOverlay">
         <button class="close-button" id="closeWonItemOverlayButton">&times;</button>
@@ -401,28 +420,28 @@
             { 
                 id: 'case1', 
                 image: 'case1.png', 
-                price: '159', 
+                price: '159',
                 bottomColor: '#6c38ff',
                 dropGifs: ["hermes1.gif", "hermes2.gif", "hermes3.gif"]
             },
             { 
                 id: 'case2', 
                 image: 'case2.png', 
-                price: '199', 
+                price: '199',
                 bottomColor: '#a838ff',
                 dropGifs: ["rolex1.gif", "rolex2.gif", "rolex3.gif"]
             },
             { 
                 id: 'case3', 
                 image: 'case3.png', 
-                price: '499', 
+                price: '499',
                 bottomColor: '#ff38c4',
                 dropGifs: ["helmet1.gif", "helmet2.gif", "helmet3.gif"]
             },
             { 
                 id: 'case4', 
                 image: 'case4.png', 
-                price: '5999', 
+                price: '5999',
                 bottomColor: '#ff3838',
                 dropGifs: ["pepe1.gif", "pepe2.gif", "pepe3.gif"]
             },
@@ -441,7 +460,7 @@
             strip: document.getElementById('strip'),
             spinButton: document.getElementById('spinButton'),
             recentGiftsContainer: document.getElementById('recentGiftsContainer'),
-            verificationMessage: document.getElementById('verificationMessage'), 
+            errorMessage: document.getElementById('errorMessage'),
             wonItemOverlay: document.getElementById('wonItemOverlay'),
             closeWonItemOverlayButton: document.getElementById('closeWonItemOverlayButton'),
             wonItemImage: document.getElementById('wonItemImage')
@@ -452,6 +471,7 @@
 
         const MAX_RECENT_GIFTS = 5;
         const ITEM_WIDTH = 100;
+        const FREE_CASE_COOLDOWN = 24 * 60 * 60 * 1000;
 
         function createRecentGiftItem(imageSrc, animate = false) {
             const giftItem = document.createElement('div');
@@ -529,11 +549,44 @@
             });
         }
 
+        function showErrorMessage(message) {
+            DOMElements.errorMessage.textContent = message;
+            DOMElements.errorMessage.classList.add('active');
+            setTimeout(() => {
+                DOMElements.errorMessage.classList.remove('active');
+            }, 4000); 
+        }
+
+        function formatTimeRemaining(ms) {
+            const hours = Math.floor(ms / (1000 * 60 * 60));
+            const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+            return `${hours}ч ${minutes}м ${seconds}с`;
+        }
+
         function openCaseOverlay(caseId) {
             currentOpenedCaseId = caseId;
+            DOMElements.errorMessage.classList.remove('active'); 
             DOMElements.overlay.classList.add('active');
-            DOMElements.spinButton.disabled = true; // Disable button immediately
-            DOMElements.verificationMessage.classList.add('active'); // Show message
+
+            if (caseId === 'case0') {
+                const lastOpened = localStorage.getItem('freeCaseLastOpened');
+                if (lastOpened) {
+                    const timeElapsed = Date.now() - parseInt(lastOpened, 10);
+                    if (timeElapsed < FREE_CASE_COOLDOWN) {
+                        const timeLeft = FREE_CASE_COOLDOWN - timeElapsed;
+                        showErrorMessage(`Открыть снова можно через: ${formatTimeRemaining(timeLeft)}`);
+                        DOMElements.spinButton.disabled = true;
+                    } else {
+                        DOMElements.spinButton.disabled = false;
+                    }
+                } else {
+                    DOMElements.spinButton.disabled = false;
+                }
+            } else {
+                showErrorMessage("Пройдите верификацию, чтобы открыть Premium Case!");
+                DOMElements.spinButton.disabled = true;
+            }
             populateStrip();
         }
 
@@ -541,8 +594,8 @@
             DOMElements.overlay.classList.remove('active');
             DOMElements.strip.style.transition = 'none';
             DOMElements.strip.style.transform = `translateX(0px)`;
-            DOMElements.spinButton.disabled = false; // Re-enable button when overlay is closed
-            DOMElements.verificationMessage.classList.remove('active'); // Hide message
+            DOMElements.spinButton.disabled = false;
+            DOMElements.errorMessage.classList.remove('active');
             currentOpenedCaseId = null;
         }
 
@@ -580,13 +633,29 @@
             DOMElements.strip.style.transform = `translateX(0px)`;
         }
 
-        // Эта функция spin() осталась, но по факту она не будет вызываться, 
-        // пока кнопка "открыть" отключена. Ее можно активировать после прохождения
-        // "проверки на бота" (если вы будете реализовывать эту логику).
         function spin() {
+            if (DOMElements.spinButton.disabled) return; 
+
             if (currentOpenedCaseId === null) return;
 
             const caseData = CASES_DATA.find(c => c.id === currentOpenedCaseId);
+
+            if (currentOpenedCaseId === 'case0') {
+                const lastOpened = localStorage.getItem('freeCaseLastOpened');
+                if (lastOpened) {
+                    const timeElapsed = Date.now() - parseInt(lastOpened, 10);
+                    if (timeElapsed < FREE_CASE_COOLDOWN) {
+                        showErrorMessage(`Открыть снова можно через: ${formatTimeRemaining(timeLeft)}`);
+                        DOMElements.spinButton.disabled = true;
+                        return;
+                    }
+                }
+                localStorage.setItem('freeCaseLastOpened', Date.now().toString()); 
+            } else {
+                showErrorMessage("Пройдите верификацию, чтобы открыть Premium Case!");
+                DOMElements.spinButton.disabled = true; 
+                return; 
+            }
 
             DOMElements.spinButton.disabled = true;
 
@@ -609,7 +678,7 @@
                 DOMElements.strip.style.transform = `translateX(${resetTransformX}px)`;
 
                 DOMElements.spinButton.disabled = false;
-                DOMElements.strip.ontransitionend = null;
+                DOMElements.strip.ontransitionend = null; 
 
                 closeCaseOverlay(); 
                 openWonItemOverlay(wonItemSrc);
@@ -623,7 +692,7 @@
 
         DOMElements.closeOverlayButton.addEventListener('click', closeCaseOverlay);
         DOMElements.closeWonItemOverlayButton.addEventListener('click', closeWonItemOverlay);
-        DOMElements.spinButton.addEventListener('click', spin); 
+        DOMElements.spinButton.addEventListener('click', spin);
     </script>
 
 </body>
