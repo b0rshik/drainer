@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кейсы</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #141415;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .recent-gifts-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            height: 70px;
+        }
+        
+        .recent-gifts-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            gap: 10px;
+            padding: 10px 0;
+            position: relative;
+            overflow: hidden;
+            height: 70px;
+        }
+
+        .recent-gift-item {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            background: linear-gradient(to right, #272727, #404040);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            flex-shrink: 0;
+            position: relative;
+            transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+        }
+
+        .recent-gift-item img {
+            max-width: 40px;
+            max-height: 40px;
+            object-fit: contain;
+            border-radius: 5px;
+        }
+
+        @keyframes fly-in {
+            0% {
+                transform: translateY(-100px) translateX(-100px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0) translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .recent-gift-item.new-item-animation {
+            animation: fly-in 0.5s ease-out forwards;
+        }
+
+        .balance-display {
+            background: linear-gradient(to right, #272727, #404040);
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.3em;
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .balance-display .toncoin-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .case-item {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            background: linear-gradient(to right, #272727, #404040);
+            transform: translateZ(0);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .case-item:hover {
+            transform: translateY(-5px) translateZ(0);
+            box-shadow: 0 6px 15px rgba(0, 166, 255, 0.4);
+        }
+
+        .case-content-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 45px);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            z-index: 1;
+            transform: translateZ(0);
+        }
+
+        .case-content-area img {
+            width: 80%;
+            height: auto;
+            max-height: 120px;
+            object-fit: contain;
+            border-radius: 15px;
+        }
+
+        .case-price {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 15px;
+            z-index: 2;
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .case-price::before {
+            content: "";
+            display: block;
+            width: 18px;
+            height: 1px;
+        }
+
+        .toncoin-icon {
+            width: 18px;
+            height: 18px;
+            margin-left: 5px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .won-item-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001; /* Higher z-index than main overlay */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .won-item-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .won-item-overlay h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #0075ff;
+        }
+
+        .won-item-overlay img {
+            max-width: 150px;
+            max-height: 150px;
+            object-fit: contain;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 117, 255, 0.4);
+        }
+
+        .won-item-overlay p {
+            font-size: 1.2em;
+            line-height: 1.5;
+            max-width: 80%;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 1001;
+            transition: color 0.2s ease;
+        }
+
+        .close-button:hover {
+            color: #0075ff;
+        }
+
+        .roulette {
+            position: relative;
+            width: 300px;
+            height: 100px;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            background: #222222;
+        }
+
+        .strip {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+        }
+
+        .slot {
+            min-width: 100px;
+            height: 100%;
+            border-right: 1px solid #333333;
+            border-left: 1px solid #333333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #222222;
+            box-sizing: border-box;
+        }
+
+        .slot:first-child {
+            border-left: none;
+        }
+
+        .slot:last-child {
+            border-right: none;
+        }
+
+        .slot img {
+            max-width: 90px;
+            max-height: 90px;
+            display: block;
+        }
+
+        .line {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-1px);
+            width: 2px;
+            height: 100%;
+            background: #0a5dc9;
+            z-index: 2;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            background: #0075ff;
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.3s ease, transform 0.1s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 117, 255, 0.4);
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+        }
+
+        button:hover:not(:disabled) {
+            background: #0066e6;
+            transform: translateY(-1px);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            background: #444444;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .error-message {
+            text-align: center;
+            color: #ff3838;
+            font-size: 1.1em;
+            margin-top: 15px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .error-message.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .footer-text {
+            color: #888888;
+            font-size: 0.9em;
+            margin-top: 50px;
+            text-align: center;
+            padding-bottom: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="recent-gifts-wrapper">
+        <div class="recent-gifts-container" id="recentGiftsContainer">
+        </div>
+    </div>
+
+    <div class="case-grid" id="caseGrid">
+    </div>
+
+    <div class="footer-text">
+        Все права принадлежат Telegram.
+    </div>
+
+    <div class="overlay" id="overlay">
+        <button class="close-button" id="closeOverlayButton">&times;</button>
+        <div class="roulette">
+            <div class="strip" id="strip">
+            </div>
+            <div class="line"></div>
+        </div>
+        <button id="spinButton">открыть</button>
+        <div class="error-message" id="errorMessage">Пройдите верификацию,<br>чтобы открыть Premium Case!</div>
+    </div>
+
+    <div class="won-item-overlay" id="wonItemOverlay">
+        <button class="close-button" id="closeWonItemOverlayButton">&times;</button>
+        <h2>Поздравляем!</h2>
+        <img src="" alt="Выигранный предмет" id="wonItemImage">
+        <p>Вы выиграли подарок! Вернитесь в чат-бот, <br>чтобы вывести его.<br></p>
+    </div>
+
+    <script>
+        const CASES_DATA = [
+            { 
+                id: 'case0', 
+                image: 'case0.png', 
+                price: 'Free', 
+                bottomColor: '#00a6ff',
+                dropGifs: ["calendar1.gif", "bell1.gif", "lamp1.gif", "witchhat1.gif", "snakepet1.gif", "lolpop1.gif"]
+            },
+            { 
+                id: 'case1', 
+                image: 'case1.png', 
+                price: '159', 
+                bottomColor: '#6c38ff',
+                dropGifs: ["hermes1.gif", "hermes2.gif", "hermes3.gif"]
+            },
+            { 
+                id: 'case2', 
+                image: 'case2.png', 
+                price: '199', 
+                bottomColor: '#a838ff',
+                dropGifs: ["rolex1.gif", "rolex2.gif", "rolex3.gif"]
+            },
+            { 
+                id: 'case3', 
+                image: 'case3.png', 
+                price: '499', 
+                bottomColor: '#ff38c4',
+                dropGifs: ["helmet1.gif", "helmet2.gif", "helmet3.gif"]
+            },
+            { 
+                id: 'case4', 
+                image: 'case4.png', 
+                price: '5999', 
+                bottomColor: '#ff3838',
+                dropGifs: ["pepe1.gif", "pepe2.gif", "pepe3.gif"]
+            },
+        ];
+
+        const GIF_SOURCES = [
+            "helmet1.gif", "helmet2.gif", "lolpop1.gif", "helmet3.gif", "rolex1.gif", "rolex2.gif", "rolex3.gif", 
+            "pepe1.gif", "pepe2.gif", "pepe3.gif", "hermes1.gif", "hermes2.gif", "hermes3.gif", 
+            "calendar1.gif", "bell1.gif", "lamp1.gif", "witchhat1.gif", "snakepet1.gif"
+        ];
+
+        const DOMElements = {
+            caseGrid: document.getElementById('caseGrid'),
+            overlay: document.getElementById('overlay'),
+            closeOverlayButton: document.getElementById('closeOverlayButton'),
+            strip: document.getElementById('strip'),
+            spinButton: document.getElementById('spinButton'),
+            recentGiftsContainer: document.getElementById('recentGiftsContainer'),
+            errorMessage: document.getElementById('errorMessage'),
+            wonItemOverlay: document.getElementById('wonItemOverlay'),
+            closeWonItemOverlayButton: document.getElementById('closeWonItemOverlayButton'),
+            wonItemImage: document.getElementById('wonItemImage')
+        };
+
+        let userBalance = 0; // You would integrate this with your backend for actual user balance
+        let currentOpenedCaseId = null;
+        let wonItemSrc = null;
+
+        const MAX_RECENT_GIFTS = 5;
+        const ITEM_WIDTH = 100;
+
+        function createRecentGiftItem(imageSrc, animate = false) {
+            const giftItem = document.createElement('div');
+            giftItem.classList.add('recent-gift-item');
+            if (animate) {
+                giftItem.classList.add('new-item-animation');
+                giftItem.addEventListener('animationend', () => {
+                    giftItem.classList.remove('new-item-animation');
+                }, { once: true });
+            }
+
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.alt = `Подарок`;
+            giftItem.appendChild(img);
+            return giftItem;
+        }
+
+        function addRecentGiftItem() {
+            while (DOMElements.recentGiftsContainer.children.length >= MAX_RECENT_GIFTS) {
+                const oldestGift = DOMElements.recentGiftsContainer.lastElementChild;
+                oldestGift.remove();
+            }
+
+            const randomSrc = GIF_SOURCES[Math.floor(Math.random() * GIF_SOURCES.length)];
+            const newGiftItem = createRecentGiftItem(randomSrc, true);
+            DOMElements.recentGiftsContainer.prepend(newGiftItem);
+        }
+
+        function initializeRecentGifts() {
+            for (let i = 0; i < MAX_RECENT_GIFTS; i++) {
+                const randomSrc = GIF_SOURCES[Math.floor(Math.random() * GIF_SOURCES.length)];
+                const giftItem = createRecentGiftItem(randomSrc, false);
+                DOMElements.recentGiftsContainer.prepend(giftItem);
+            }
+            setInterval(addRecentGiftItem, Math.random() * (4000 - 1500) + 1500);
+        }
+
+        function createCaseItem(caseData) {
+            const caseItem = document.createElement('div');
+            caseItem.classList.add('case-item');
+            caseItem.id = caseData.id;
+            caseItem.style.background = `linear-gradient(to right, #272727, #404040)`;
+
+            const caseContentArea = document.createElement('div');
+            caseContentArea.classList.add('case-content-area');
+            caseContentArea.style.background = `linear-gradient(to bottom, #333333, #222222, ${caseData.bottomColor})`;
+
+            const img = document.createElement('img');
+            img.src = caseData.image;
+            img.alt = `Кейс ${caseData.id}`;
+            caseContentArea.appendChild(img);
+            caseItem.appendChild(caseContentArea);
+
+            const price = document.createElement('span');
+            price.classList.add('case-price');
+            price.textContent = caseData.price;
+            
+            const toncoinIcon = document.createElement('img');
+            toncoinIcon.src = 'toncoin.png';
+            toncoinIcon.alt = 'TON';
+            toncoinIcon.classList.add('toncoin-icon');
+            
+            price.appendChild(toncoinIcon);
+            caseItem.appendChild(price);
+
+            caseItem.addEventListener('click', () => openCaseOverlay(caseData.id));
+            return caseItem;
+        }
+
+        function renderCaseItems() {
+            CASES_DATA.forEach(caseData => {
+                const caseItem = createCaseItem(caseData);
+                DOMElements.caseGrid.appendChild(caseItem);
+            });
+        }
+
+        function showErrorMessage() {
+            DOMElements.errorMessage.classList.add('active');
+            setTimeout(() => {
+                DOMElements.errorMessage.classList.remove('active');
+            }, 2000);
+        }
+
+        function openCaseOverlay(caseId) {
+            currentOpenedCaseId = caseId;
+            DOMElements.overlay.classList.add('active');
+            populateStrip();
+        }
+
+        function closeCaseOverlay() {
+            DOMElements.overlay.classList.remove('active');
+            DOMElements.strip.style.transition = 'none';
+            DOMElements.strip.style.transform = `translateX(0px)`;
+            DOMElements.spinButton.disabled = false;
+            DOMElements.errorMessage.classList.remove('active');
+            currentOpenedCaseId = null;
+        }
+
+        function openWonItemOverlay(itemSrc) {
+            DOMElements.wonItemImage.src = itemSrc;
+            DOMElements.wonItemOverlay.classList.add('active');
+        }
+
+        function closeWonItemOverlay() {
+            DOMElements.wonItemOverlay.classList.remove('active');
+            wonItemSrc = null;
+        }
+
+        function populateStrip() {
+            DOMElements.strip.innerHTML = '';
+            const caseData = CASES_DATA.find(c => c.id === currentOpenedCaseId);
+            const currentGifs = caseData && caseData.dropGifs ? caseData.dropGifs : GIF_SOURCES;
+
+            const repeatedGifs = [];
+            for (let i = 0; i < 5; i++) { // Repeat more to ensure enough items for spinning
+                repeatedGifs.push(...currentGifs);
+            }
+
+            repeatedGifs.forEach(src => {
+                const slot = document.createElement('div');
+                slot.classList.add('slot');
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = src.split('.')[0];
+                slot.appendChild(img);
+                DOMElements.strip.appendChild(slot);
+            });
+
+            DOMElements.strip.style.transition = 'none';
+            DOMElements.strip.style.transform = `translateX(0px)`;
+        }
+
+        function spin() {
+            if (currentOpenedCaseId === null) return;
+
+            const caseData = CASES_DATA.find(c => c.id === currentOpenedCaseId);
+            let casePrice = caseData.price === 'Free' ? 0 : parseInt(caseData.price, 10);
+
+            // This is a placeholder for actual balance check.
+            // For demonstration, we'll allow spinning even with 0 balance for free cases.
+            if (casePrice > userBalance && casePrice !== 0) {
+                showErrorMessage();
+                return;
+            }
+
+            // Deduct balance only if it's not a free case
+            if (casePrice !== 0) {
+                userBalance -= casePrice;
+                // You would update the displayed balance here if you had one
+            }
+
+            DOMElements.spinButton.disabled = true;
+
+            const currentGifs = caseData && caseData.dropGifs ? caseData.dropGifs : GIF_SOURCES;
+            const totalGifs = currentGifs.length;
+            const targetIndexInOriginal = Math.floor(Math.random() * totalGifs);
+            wonItemSrc = currentGifs[targetIndexInOriginal]; // Store the won item's source
+
+            const numRotations = 4; // Number of full rotations before landing
+            const totalSpinDistance = (numRotations * totalGifs + targetIndexInOriginal) * ITEM_WIDTH;
+
+            // Calculate the final transformX to center the won item under the line
+            // The strip starts at 0px. To center an item, we want its left edge at 50% of roulette width minus half its own width.
+            // Roulette width is 300px, so center is at 150px. Item width is 100px, so half is 50px.
+            // The item's center needs to be at 150px.
+            // If the target item is at index `i`, its left edge is `i * ITEM_WIDTH`.
+            // Its center is `i * ITEM_WIDTH + ITEM_WIDTH / 2`.
+            // We want `-(i * ITEM_WIDTH + ITEM_WIDTH / 2) + (ROULETTE_WIDTH / 2)`
+            const finalTransformX = -(totalSpinDistance + (ITEM_WIDTH / 2) - (300 / 2));
+
+            DOMElements.strip.style.transition = 'transform 3s cubic-bezier(0.25, 0.1, 0.25, 1)';
+            DOMElements.strip.style.transform = `translateX(${finalTransformX}px)`;
+
+            DOMElements.strip.ontransitionend = () => {
+                // Adjust position after transition to prevent jumping
+                const resetTransformX = -(targetIndexInOriginal * ITEM_WIDTH + (ITEM_WIDTH / 2) - (300 / 2));
+                DOMElements.strip.style.transition = 'none';
+                DOMElements.strip.style.transform = `translateX(${resetTransformX}px)`;
+
+                DOMElements.spinButton.disabled = false;
+                DOMElements.strip.ontransitionend = null; // Clear the event listener
+
+                // Show the won item overlay
+                closeCaseOverlay(); // Close the main overlay first
+                openWonItemOverlay(wonItemSrc);
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCaseItems();
+            initializeRecentGifts();
+        });
+
+        DOMElements.closeOverlayButton.addEventListener('click', closeCaseOverlay);
+        DOMElements.closeWonItemOverlayButton.addEventListener('click', closeWonItemOverlay);
+        DOMElements.spinButton.addEventListener('click', spin);
+    </script>
+
+</body>
+</html>
